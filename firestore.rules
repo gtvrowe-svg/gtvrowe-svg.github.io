@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isMember(hid) {
+      return signedIn() && request.auth.uid in get(/databases/$(database)/documents/households/$(hid)).data.members;
+    }
+
+    // Perfil de cada pessoa: só ela lê e escreve.
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // A "casa" compartilhada.
+    match /households/{hid} {
+      allow create: if signedIn()
+        && request.resource.data.members == [request.auth.uid];
+      allow read, delete: if signedIn() && request.auth.uid in resource.data.members;
+      allow update: if signedIn() && (
+        request.auth.uid in resource.data.members
+        // Entrar com o código: só pode acrescentar a si mesmo, até 6 pessoas.
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberNames'])
+            && request.resource.data.members.hasAll(resource.data.members)
+            && request.resource.data.members.size() == resource.data.members.size() + 1
+            && request.auth.uid in request.resource.data.members
+            && request.resource.data.members.size() <= 6)
+      );
+
+      // Lançamentos: só quem é da casa.
+      match /tx/{txId} {
+        allow read, write: if isMember(hid);
+      }
+    }
+  }
+}
