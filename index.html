@@ -49,7 +49,7 @@ button{cursor:pointer}
 .month{display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
 .month button{border:0;background:none;width:36px;height:36px;border-radius:50%;font-size:1.1rem}
 .month button:hover{background:var(--soft)}
-.month span{min-width:132px;text-align:center;font-weight:600;text-transform:capitalize}
+.month span{min-width:132px;text-align:center;font-weight:600;white-space:nowrap}
 
 /* hero */
 .hero{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px 20px 18px;margin-bottom:18px}
@@ -174,9 +174,28 @@ dialog::backdrop{background:rgba(10,15,30,.5)}
 .gear{border:1px solid var(--line);background:var(--surface);width:44px;height:44px;border-radius:50%;font-size:1.15rem;flex:none}
 .code{font-family:Sora,monospace;font-size:1.05rem;background:var(--soft);padding:10px 12px;border-radius:10px;word-break:break-all;margin:6px 0 10px}
 .who{font-size:.75rem;font-weight:700;padding:1px 7px;border-radius:6px;background:var(--soft);color:var(--muted);margin-left:4px}
+#s-app{position:relative}
+#s-app .wrap{position:relative;z-index:1}
+.cover{display:none;position:absolute;left:0;right:0;top:0;height:calc(58vh + 40px);background-size:cover;background-position:center 28%;z-index:0}
+.cover::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.45) 0%,rgba(0,0,0,.05) 35%,rgba(0,0,0,.1) 60%,var(--bg) 100%)}
+.photo-space{display:none;height:28vh}
+.has-photo .cover,.has-photo .photo-space{display:block}
+.has-photo .top h1#hname,.has-photo .greet,.has-photo .status{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.has-photo .month,.has-photo .gear{background:rgba(15,20,35,.45);border-color:rgba(255,255,255,.25);color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.has-photo .month button{color:#fff}
+.has-photo .love{background:rgba(15,20,35,.55);border-color:rgba(255,255,255,.2);color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.has-photo .love.party{background:rgba(120,80,0,.6)}
+.photo-row{display:flex;align-items:center;gap:12px;margin-top:4px}
+.photo-row img{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--soft)}
+.greet{font-family:Sora,sans-serif;font-size:1.35rem;font-weight:700;color:var(--ink);line-height:1.2}
+.top h1#hname{font-size:.95rem;font-weight:600;color:var(--muted);margin-bottom:2px}
+.love{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:12px;font-size:.95rem}
+.love b{font-family:Sora,sans-serif;font-variant-numeric:tabular-nums}
+.love .hrt{font-size:1.3rem;line-height:1}
+.love.party{background:var(--warn-soft);border-color:var(--warn)}
 .offline{background:var(--warn-soft);color:var(--warn);font-weight:600;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:.92rem}
 .topr{display:flex;align-items:center;gap:8px}
-@media(max-width:420px){.month span{min-width:104px;font-size:.95rem}}
+@media(max-width:520px){.top{flex-direction:column;align-items:stretch}.top h1{font-size:1rem}.topr{justify-content:space-between}.month{flex:1;justify-content:space-between}.month span{min-width:0;flex:1}}
 </style>
 </head>
 <body>
@@ -224,10 +243,12 @@ dialog::backdrop{background:rgba(10,15,30,.5)}
 
 <!-- App -->
 <div id="s-app" hidden>
+<div class="cover" id="cover" aria-hidden="true"></div>
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>Finanças da casa</h1>
+      <h1 id="hname">Finanças da casa</h1>
+      <div class="greet" id="greet"></div>
       <div class="status" id="status"></div>
     </div>
     <div class="topr">
@@ -239,6 +260,8 @@ dialog::backdrop{background:rgba(10,15,30,.5)}
       <button class="gear" id="gear" aria-label="Configurações">⚙️</button>
     </div>
   </header>
+  <div class="photo-space"></div>
+  <div class="love" id="love" hidden></div>
   <div class="offline" id="offline" hidden>Sem internet. Pode continuar usando: as alterações são enviadas quando a conexão voltar.</div>
 
   <section class="hero" aria-live="polite">
@@ -299,6 +322,23 @@ dialog::backdrop{background:rgba(10,15,30,.5)}
 <!-- Configurações -->
 <dialog id="set"><div class="sheet">
   <h3>Configurações</h3>
+  <div class="f">
+    <label class="full">Nome da casa<input id="st-hname" maxlength="40" placeholder="Ex.: Família Rowe"></label>
+    <label>Juntos desde<input id="st-since" type="date"></label>
+    <label>Frase do contador<select id="st-kind"><option value="juntos">Juntos há…</option><option value="casados">Casados há…</option></select></label>
+  </div>
+  <div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="btn pri sm" id="st-savehome">Salvar</button></div>
+  <p class="muted" style="margin:16px 0 4px">Foto de fundo</p>
+  <div class="photo-row">
+    <img id="st-thumb" alt="" hidden>
+    <div class="tools">
+      <button class="btn sm" id="st-photo">Escolher foto</button>
+      <button class="btn sm danger" id="st-photodel" hidden>Remover</button>
+    </div>
+  </div>
+  <p class="muted" id="st-photomsg" style="font-size:.85rem;margin:6px 0 0">A foto fica guardada só para vocês dois, junto com os dados da casa.</p>
+  <input type="file" id="photofile" accept="image/*" hidden>
+  <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
   <p class="muted" style="margin:0">Código de convite da casa</p>
   <div class="code" id="st-code"></div>
   <div class="tools"><button class="btn sm" id="st-share">Enviar código</button></div>
@@ -337,7 +377,7 @@ const today = () => { const d=new Date(); return `${d.getFullYear()}-${pad(d.get
 const ymOf = d => d.slice(0,7);
 const addMonths = (ym,k) => { let [y,m]=ym.split("-").map(Number); m+=k; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1; return `${y}-${pad(m)}`; };
 const shiftDate = (date,k) => { const ym=addMonths(ymOf(date),k); const [y,m]=ym.split("-").map(Number); const last=new Date(y,m,0).getDate(); return `${ym}-${pad(Math.min(+date.slice(8),last))}`; };
-const mLabel = ym => { const [y,m]=ym.split("-").map(Number); return new Date(y,m-1,1).toLocaleDateString("pt-BR",{month:"long",year:"numeric"}); };
+const mLabel = ym => { const [y,m]=ym.split("-").map(Number); const t=new Date(y,m-1,1).toLocaleDateString("pt-BR",{month:"long",year:"numeric"}); return t.charAt(0).toUpperCase()+t.slice(1); };
 const mShort = ym => { const [y,m]=ym.split("-").map(Number); return new Date(y,m-1,1).toLocaleDateString("pt-BR",{month:"short"}).replace(".",""); };
 const parseAmt = s => { s=String(s).trim().replace(/[R$\s]/g,""); if(!s) return NaN; if(s.includes(",")) s=s.replace(/\./g,"").replace(",","."); return Math.round(parseFloat(s)*100)/100; };
 const round = n => Math.round(n*100)/100;
@@ -450,7 +490,7 @@ function start(hid){
     if(!snap.exists()){ toast("Essa casa não existe mais"); return; }
     const d=snap.data();
     if(!S.cfgDirty) S.cfg=Object.assign(defaultCfg(),d.config||{});
-    S.names=d.memberNames||{}; S.members=d.members||[];
+    S.names=d.memberNames||{}; S.members=d.members||[]; S.photo=d.photo||"";
     setStatus(snap.metadata.hasPendingWrites?"Salvando…":"Sincronizado");
     render();
   },e=>{ setStatus("Sem acesso a esta casa"); }));
@@ -482,7 +522,51 @@ const nameOf = u => S.names[u] || "Alguém";
 function totals(list){ let i=0,o=0; for(const t of list){ if(t.type==="receita") i+=t.amount; else o+=t.amount; } return {i:round(i),o:round(o),s:round(i-o)}; }
 
 /* ---------- topo ---------- */
+function firstName(u){ const n=(S.names[u]||(u===S.me.uid?myName():"")||"").trim(); return n.split(/\s+/)[0]||""; }
+function renderPhoto(){
+  const has=!!S.photo;
+  $("#s-app").classList.toggle("has-photo",has);
+  $("#cover").style.backgroundImage = has? `url("${S.photo}")` : "";
+  const th=$("#st-thumb"); th.hidden=!has; if(has) th.src=S.photo;
+  $("#st-photodel").hidden=!has; $("#st-photo").textContent = has?"Trocar foto":"Escolher foto";
+}
+async function shrinkPhoto(file){
+  let bmp;
+  try{ bmp=await createImageBitmap(file,{imageOrientation:"from-image"}); }catch(e){ bmp=await createImageBitmap(file); }
+  const max=1000, k=Math.min(1,max/Math.max(bmp.width,bmp.height));
+  const c=document.createElement("canvas"); c.width=Math.round(bmp.width*k); c.height=Math.round(bmp.height*k);
+  c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+  let q=.75, url=c.toDataURL("image/jpeg",q);
+  while(url.length>600000 && q>.35){ q-=.1; url=c.toDataURL("image/jpeg",q); }
+  return url;
+}
+function renderPersonal(){
+  renderPhoto();
+  const home=(S.cfg.homeName||"").trim()||"Finanças da casa";
+  $("#hname").textContent=home; document.title=home;
+  const h=new Date().getHours(); const hi=h<5?"Boa noite":h<12?"Bom dia":h<18?"Boa tarde":"Boa noite";
+  const fn=S.me?firstName(S.me.uid):""; $("#greet").textContent = fn? `${hi}, ${fn}!` : `${hi}!`;
+  const el=$("#love"); const since=S.cfg.since;
+  if(!since){ el.hidden=true; return; }
+  const [y,m,d]=since.split("-").map(Number); const now=new Date(); now.setHours(0,0,0,0); const start=new Date(y,m-1,d);
+  if(start>now){ el.hidden=true; return; }
+  let Y=now.getFullYear()-y, M=now.getMonth()-(m-1), D=now.getDate()-d;
+  if(D<0){ M--; D+=new Date(now.getFullYear(),now.getMonth(),0).getDate(); }
+  if(M<0){ Y--; M+=12; }
+  const parts=[]; if(Y) parts.push(Y+(Y>1?" anos":" ano")); if(M) parts.push(M+(M>1?" meses":" mês")); if(D||!parts.length) parts.push(D+(D!==1?" dias":" dia"));
+  const txt = parts.length>1? parts.slice(0,-1).join(", ")+" e "+parts.at(-1) : parts[0];
+  const verb = S.cfg.sinceKind==="casados"?"Casados há":"Juntos há";
+  const names = S.members.map(firstName).filter(Boolean);
+  const who = names.length>1? names.join(" & ")+" · " : "";
+  const anniv = M===0 && D===0 && Y>0;
+  el.classList.toggle("party",anniv);
+  el.innerHTML = anniv
+    ? `<span class="hrt">🎉</span><span>${esc(who)}Hoje fazem <b>${Y} ${Y>1?"anos":"ano"}</b>! Feliz aniversário para vocês 💞</span>`
+    : `<span class="hrt">💞</span><span>${esc(who)}${verb} <b>${esc(txt)}</b></span>`;
+  el.hidden=false;
+}
 function renderHero(){
+  renderPersonal();
   $("#mlabel").textContent = mLabel(S.month);
   const list = monthTx(S.month); const {i,o,s} = totals(list);
   const el=$("#saldo"); el.textContent=fmt(s); el.classList.toggle("neg",s<0);
@@ -524,7 +608,7 @@ function renderLanc(){
     }).join("");
   }).join("") : (monthTx(S.month).length
       ? `<div class="empty"><b>Nada encontrado</b>Ajuste a busca ou os filtros.</div>`
-      : `<div class="empty"><b>Nenhum lançamento em ${esc(mLabel(S.month))}</b>Toque em “Novo lançamento” para registrar uma despesa ou receita.</div>`);
+      : `<div class="empty"><b>Nenhum lançamento em ${esc(mLabel(S.month).toLowerCase())}</b>Toque em “Novo lançamento” para registrar uma despesa ou receita.</div>`);
   $("#view").innerHTML = `<div class="panel">
     <div class="filters">
       <input id="q" type="search" placeholder="Buscar lançamentos" value="${esc(S.q)}" aria-label="Buscar">
@@ -762,11 +846,32 @@ $("#txform").onsubmit=e=>{
 /* ---------- configurações ---------- */
 const setDlg=$("#set");
 function openSettings(){
+  $("#st-hname").value=S.cfg.homeName||""; $("#st-since").value=S.cfg.since||""; $("#st-kind").value=S.cfg.sinceKind||"juntos";
   $("#st-code").textContent=S.hid;
   $("#st-members").innerHTML=S.members.map(u=>`<span class="chip">${esc(nameOf(u))}${u===S.me.uid?" (você)":""}</span>`).join("");
   setDlg.showModal();
 }
 $("#gear").onclick=openSettings;
+$("#st-photo").onclick=()=>$("#photofile").click();
+$("#photofile").onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  const msg=$("#st-photomsg"); msg.textContent="Preparando a foto…";
+  try{
+    const url=await shrinkPhoto(f);
+    S.photo=url; renderPhoto();
+    await updateDoc(hhRef(),{photo:url});
+    msg.textContent="Foto salva para vocês dois."; toast("Foto de fundo atualizada");
+  }catch(err){ msg.textContent="Não foi possível usar essa foto. Tente outra (JPG ou PNG)."; }
+};
+$("#st-photodel").onclick=async()=>{
+  if(!confirm("Remover a foto de fundo?")) return;
+  S.photo=""; renderPhoto();
+  try{ await updateDoc(hhRef(),{photo:""}); toast("Foto removida"); }catch(e){ toast("Não foi possível remover"); }
+};
+$("#st-savehome").onclick=()=>{
+  S.cfg.homeName=$("#st-hname").value.trim(); S.cfg.since=$("#st-since").value; S.cfg.sinceKind=$("#st-kind").value;
+  saveCfg(); render(); toast("Salvo para vocês dois");
+};
 $("#st-close").onclick=()=>setDlg.close();
 $("#st-out").onclick=()=>{ if(confirm("Sair da conta neste celular?")){ setDlg.close(); signOut(auth); } };
 $("#st-share").onclick=async()=>{
@@ -793,7 +898,7 @@ $("#importfile").onchange=async e=>{
     const txs = d.tx || (d.years? Object.values(d.years).flat() : null);
     const cfg = d.cfg; if(!txs||!cfg) throw 0;
     if(!confirm(`Importar ${txs.length} lançamentos e as categorias/metas do backup? Lançamentos iguais são substituídos.`)) return;
-    S.cfg=Object.assign(defaultCfg(),{cats:cfg.cats,goals:cfg.goals||[]}); saveCfg();
+    S.cfg=Object.assign(defaultCfg(),{cats:cfg.cats,goals:cfg.goals||[],homeName:cfg.homeName||S.cfg.homeName,since:cfg.since||S.cfg.since,sinceKind:cfg.sinceKind||S.cfg.sinceKind}); saveCfg();
     for(let i=0;i<txs.length;i+=400){ await putTx(txs.slice(i,i+400).map(t=>({...t,by:t.by||S.me.uid}))); }
     toast("Backup importado"); setDlg.close();
   }catch(err){ toast("Arquivo inválido: use um backup gerado por este app"); }

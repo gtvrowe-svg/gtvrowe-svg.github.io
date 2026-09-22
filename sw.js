@@ -1,5 +1,5 @@
 // Service worker: guarda o app para abrir rápido e funcionar sem internet.
-const CACHE = "financas-v1";
+const CACHE = "financas-v4";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./firebase-config.js", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
