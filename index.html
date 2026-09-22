@@ -161,6 +161,24 @@ dialog::backdrop{background:rgba(10,15,30,.5)}
 .err{color:var(--out);font-size:.9rem;min-height:1.2em;margin-top:6px}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
 .toast.show{opacity:1}
+/* importar extrato */
+#imp .sheet{display:flex;flex-direction:column;max-height:calc(100dvh - 40px)}
+.imp-sum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.imp-sum div{background:var(--soft);border-radius:10px;padding:8px 10px}
+.imp-sum small{display:block;color:var(--muted);font-size:.78rem}
+.imp-sum b{font-family:Sora,sans-serif;font-size:.95rem;font-variant-numeric:tabular-nums}
+.imp-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.imp-bar select{padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.imp-list{overflow-y:auto;flex:1;min-height:120px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -20px;padding:0 20px}
+.imp-row{display:grid;grid-template-columns:24px 1fr auto;gap:4px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.imp-row:last-child{border-bottom:0}
+.imp-row.off{opacity:.5}
+.imp-row input[type=checkbox]{width:20px;height:20px;grid-row:span 2}
+.imp-row .d{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.imp-row .v{font-family:Sora,sans-serif;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.imp-row .v.in{color:var(--in)}
+.imp-row .m{font-size:.82rem;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap;grid-column:2/-1}
+.imp-row select{padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.85rem;max-width:100%}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
 .screen{max-width:440px;margin:0 auto;padding:40px 18px}
@@ -349,6 +367,7 @@ dialog::backdrop{background:rgba(10,15,30,.5)}
     <button class="btn sm" id="st-csv">Exportar mês em CSV</button>
     <button class="btn sm" id="st-bkp">Baixar backup</button>
     <button class="btn sm" id="st-imp">Restaurar backup</button>
+    <button class="btn sm pri" id="st-ext">Importar extrato do banco</button>
   </div>
   <div class="actions">
     <button class="btn danger" id="st-out">Sair da conta</button>
@@ -358,6 +377,31 @@ dialog::backdrop{background:rgba(10,15,30,.5)}
 </div></dialog>
 
 <input type="file" id="importfile" accept="application/json" hidden>
+<input type="file" id="extfile" accept=".csv,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel" hidden>
+<dialog id="imp"><div class="sheet">
+  <h3>Importar extrato</h3>
+  <p class="muted" id="imp-info" style="margin:-8px 0 10px;font-size:.9rem"></p>
+  <div class="imp-sum">
+    <div><small>Selecionados</small><b id="imp-n">0</b></div>
+    <div><small>Receitas</small><b id="imp-i" style="color:var(--in)">R$ 0</b></div>
+    <div><small>Despesas</small><b id="imp-o" style="color:var(--out)">R$ 0</b></div>
+  </div>
+  <div class="imp-bar">
+    <select id="imp-show" aria-label="Mostrar">
+      <option value="all">Mostrar todos</option>
+      <option value="sel">Só os marcados</option>
+      <option value="flag">Só os com aviso</option>
+    </select>
+    <button class="linkbtn" id="imp-all">Marcar todos</button>
+    <button class="linkbtn" id="imp-none">Desmarcar todos</button>
+  </div>
+  <div class="imp-list" id="imp-list"></div>
+  <div class="err" id="imp-err"></div>
+  <div class="actions" style="margin-top:10px">
+    <button class="btn" id="imp-cancel">Cancelar</button>
+    <button class="btn pri" id="imp-go">Importar</button>
+  </div>
+</div></dialog>
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
@@ -902,6 +946,149 @@ $("#importfile").onchange=async e=>{
     for(let i=0;i<txs.length;i+=400){ await putTx(txs.slice(i,i+400).map(t=>({...t,by:t.by||S.me.uid}))); }
     toast("Backup importado"); setDlg.close();
   }catch(err){ toast("Arquivo inválido: use um backup gerado por este app"); }
+};
+
+
+/* ---------- importar extrato bancário (CSV) ---------- */
+const impDlg=$("#imp"); let IMP=[];
+const norm = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().trim();
+function hash36(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } let h2=5381; for(let i=0;i<str.length;i++) h2=(Math.imul(h2,33)^str.charCodeAt(i))>>>0; return (h>>>0).toString(36)+h2.toString(36); }
+function splitCSV(line,sep){
+  const out=[]; let cur="",q=false;
+  for(let i=0;i<line.length;i++){ const c=line[i];
+    if(q){ if(c=='"'){ if(line[i+1]=='"'){ cur+='"'; i++; } else q=false; } else cur+=c; }
+    else if(c=='"') q=true; else if(c===sep){ out.push(cur); cur=""; } else cur+=c; }
+  out.push(cur); return out.map(x=>x.trim());
+}
+function parseDate(s){
+  s=String(s).trim(); let m;
+  if(m=s.match(/^(\d{4})-(\d{2})-(\d{2})/)) return `${m[1]}-${m[2]}-${m[3]}`;
+  if(m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/)){ const y=m[3].length===2?"20"+m[3]:m[3]; return `${y}-${pad(+m[2])}-${pad(+m[1])}`; }
+  return null;
+}
+function parseSigned(s){
+  s=String(s).trim().replace(/[R$\s]/g,""); if(!s) return NaN;
+  let neg=false; if(/^\(.*\)$/.test(s)){ neg=true; s=s.slice(1,-1); }
+  if(s.endsWith("-")){ neg=true; s=s.slice(0,-1); }
+  if(s.includes(",")) s=s.replace(/\./g,"").replace(",",".");
+  const v=parseFloat(s); return isNaN(v)?NaN:round(neg?-Math.abs(v):v);
+}
+function guessMethod(D){
+  if(/\bPIX\b/.test(D)) return "Pix";
+  if(/BOLETO|PAG TIT/.test(D)) return "Boleto";
+  if(/\bTED\b|\bDOC\b|TRANSF/.test(D)) return "Transferência";
+  if(/SAQUE/.test(D)) return "Dinheiro";
+  return "Débito";
+}
+function findCat(type,nameHint){
+  const h=norm(nameHint); if(!h) return null;
+  const c=S.cfg.cats[type].find(c=>norm(c.name)===h); return c?c.id:null;
+}
+function catId(type,wanted,fallback){ return S.cfg.cats[type].some(c=>c.id===wanted)? wanted : (S.cfg.cats[type].some(c=>c.id===fallback)?fallback:(S.cfg.cats[type][S.cfg.cats[type].length-1]||{}).id); }
+function guessCat(type,D,csvCat){
+  const C=norm(csvCat);
+  const byName=/^OUTRO/.test(C)?null:findCat(type,csvCat); if(byName) return byName;
+  if(type==="receita"){
+    if(/SALARIO|RENDA/.test(C) || /VEOLIA|SALARIO|PROVENTO/.test(D) || (/\bTED\b/.test(D)&&/GUSTAVO/.test(D))) return catId("receita","sal","outros-r");
+    if(/RENDIMENTO|RESGATE|APLIC/.test(D)) return catId("receita","invest","outros-r");
+    return catId("receita","outros-r","outros-r");
+  }
+  const M=[
+    [/MORADIA/, /HABITACAO|ALUGUEL|CONDOMINIO|ENEL|SABESP|COPEL|CEMIG|LIGHT\b/, "moradia"],
+    [/ALIMENTA/, /IFOOD|RSCSS|BAKERY|PADARIA|HORTIFRUTI|MERCADO|SUPERMERC|RESTAUR|LANCHO|PIZZ|ATACAD|ASSAI|CARREFOUR/, "alim"],
+    [/TRANSPORTE/, /SEM PARAR|MULTA|POSTO|COMBUST|UBER|99 |ESTACION|PEDAGIO|DETRAN|IPVA/, "transp"],
+    [/SAUDE|FARMACIA/, /DROGARIA|FARMAC|DROGA|RAIA|PANVEL|HOSPITAL|CLINICA|LABORAT|UNIMED/, "saude"],
+    [/TELEFONE|INTERNET|TARIFA|JUROS/, /VIVO|CLARO|\bTIM\b|\bOI\b|\bNET\b|JUROS|\bIOF\b|TAR PACOTE|TARIFA/, "contas"],
+    [/ASSINAT/, /NETFLIX|SPOTIFY|GOOGLE|APPLE|AMAZON|HOTMART|DISNEY|HBO|YOUTUBE/, "assin"],
+    [/EDUCA/, /ESCOLA|FACULD|CURSO|UNIVERS/, "edu"],
+    [/COMPRAS/, /MAGAZINE|SHOP|LOJA|MERCADO ?LIVRE|SHOPEE/, "compras"],
+  ];
+  for(const [cRe,dRe,id] of M) if(cRe.test(C)||dRe.test(D)) return catId("despesa",id,"outros-d");
+  return catId("despesa","outros-d","outros-d");
+}
+function parseStatement(text){
+  text=text.replace(/^\ufeff/,"");
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(!lines.length) throw new Error("Arquivo vazio.");
+  const sep = (lines[0].split(";").length>=lines[0].split(",").length && lines[0].includes(";")) ? ";" : (lines[0].includes("\t")?"\t":",");
+  let hi=-1, cols={};
+  for(let i=0;i<Math.min(lines.length,15);i++){
+    const h=splitCSV(lines[i],sep).map(norm);
+    const d=h.findIndex(x=>/^DATA/.test(x)), v=h.findIndex(x=>/^VALOR/.test(x));
+    if(d>=0&&v>=0){ hi=i; cols={d,v,desc:h.findIndex(x=>/DESCRI|LANCAMENTO|HISTORICO|DETALHE/.test(x)),cat:h.findIndex(x=>/CATEGORIA/.test(x))}; break; }
+  }
+  if(hi<0){ cols={d:0,desc:1,v:2,cat:-1}; hi=-1; } // sem cabeçalho: data;descrição;valor
+  const seen={}, out=[];
+  for(let i=hi+1;i<lines.length;i++){
+    const c=splitCSV(lines[i],sep);
+    const date=parseDate(c[cols.d]); const val=parseSigned(c[cols.v]);
+    const desc=(cols.desc>=0?c[cols.desc]:"")||"";
+    if(!date||isNaN(val)||val===0) continue;
+    const D=norm(desc); if(/SALDO/.test(D)) continue;
+    const base=`${date}|${val.toFixed(2)}|${D}`; seen[base]=(seen[base]||0)+1;
+    const id="ext-"+hash36(base+"|"+seen[base]);
+    const type=val<0?"despesa":"receita";
+    const r={id,date,amount:Math.abs(val),type,desc:desc.replace(/\s+/g," ").trim().slice(0,80),method:guessMethod(D),cat:guessCat(type,D,cols.cat>=0?c[cols.cat]:""),flags:[],on:true};
+    if(S.tx.some(t=>t.id===id)){ r.flags.push("já importado"); r.on=false; }
+    else if(S.tx.some(t=>t.date===date&&t.type===type&&Math.abs(t.amount-r.amount)<0.005)){ r.flags.push("parecido com um lançamento existente"); r.on=false; }
+    if(type==="despesa"&&/FATURA|ITAUCARD|PGTO MIN|ITAU UNIBANCO HOLDING/.test(D)){ r.flags.push("pagamento de cartão"); r.on=false; }
+    out.push(r);
+  }
+  if(!out.length) throw new Error("Não encontrei lançamentos. O arquivo precisa ter colunas de data, descrição e valor.");
+  return out.sort((a,b)=>b.date.localeCompare(a.date));
+}
+function impSummary(){
+  const sel=IMP.filter(r=>r.on); let i=0,o=0; sel.forEach(r=>r.type==="receita"?i+=r.amount:o+=r.amount);
+  $("#imp-n").textContent=sel.length; $("#imp-i").textContent=fmt(i); $("#imp-o").textContent=fmt(o);
+  $("#imp-go").textContent = sel.length? `Importar ${sel.length}` : "Importar"; $("#imp-go").disabled=!sel.length;
+}
+function renderImp(){
+  const mode=$("#imp-show").value;
+  const list=IMP.map((r,k)=>({r,k})).filter(({r})=>mode==="all"||(mode==="sel"&&r.on)||(mode==="flag"&&r.flags.length));
+  $("#imp-list").innerHTML = list.length? list.map(({r,k})=>`<div class="imp-row${r.on?"":" off"}" data-k="${k}">
+    <input type="checkbox" data-ion="${k}" ${r.on?"checked":""} aria-label="Importar ${esc(r.desc)}">
+    <span class="d">${esc(r.desc||"(sem descrição)")}</span>
+    <span class="v${r.type==="receita"?" in":""}">${r.type==="receita"?"+":"−"}${esc(fmt(r.amount))}</span>
+    <span class="m">${r.date.split("-").reverse().join("/")}
+      <select data-icat="${k}" aria-label="Categoria">${S.cfg.cats[r.type].map(c=>`<option value="${c.id}" ${c.id===r.cat?"selected":""}>${esc(c.icon+" "+c.name)}</option>`).join("")}</select>
+      ${r.flags.map(f=>`<span class="tag">${esc(f)}</span>`).join("")}</span></div>`).join("")
+    : `<div class="empty"><b>Nada para mostrar</b>Troque o filtro acima.</div>`;
+  impSummary();
+}
+$("#st-ext").onclick=()=>$("#extfile").click();
+$("#extfile").onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  try{
+    let text=await f.text();
+    if(text.includes("\ufffd")){ const buf=await f.arrayBuffer(); text=new TextDecoder("windows-1252").decode(buf); }
+    IMP=parseStatement(text);
+    const dates=IMP.map(r=>r.date).sort();
+    const flagged=IMP.filter(r=>!r.on).length;
+    $("#imp-info").textContent=`${IMP.length} lançamentos de ${dates[0].split("-").reverse().join("/")} a ${dates[dates.length-1].split("-").reverse().join("/")}.`+(flagged?` ${flagged} vieram desmarcados por aviso — revise antes.`:"");
+    $("#imp-show").value="all"; $("#imp-err").textContent="";
+    setDlg.close(); renderImp(); impDlg.showModal();
+  }catch(err){ toast(err&&err.message?err.message:"Não consegui ler esse arquivo"); }
+};
+$("#imp-list").addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset.ion!==undefined){ const r=IMP[+t.dataset.ion]; r.on=t.checked; t.closest(".imp-row").classList.toggle("off",!r.on); impSummary(); }
+  else if(t.dataset.icat!==undefined){ IMP[+t.dataset.icat].cat=t.value; }
+});
+$("#imp-show").onchange=renderImp;
+$("#imp-all").onclick=()=>{ IMP.forEach(r=>r.on=true); renderImp(); };
+$("#imp-none").onclick=()=>{ IMP.forEach(r=>r.on=false); renderImp(); };
+$("#imp-cancel").onclick=()=>{ impDlg.close(); IMP=[]; };
+$("#imp-go").onclick=async()=>{
+  const sel=IMP.filter(r=>r.on); if(!sel.length) return;
+  const btn=$("#imp-go"); btn.disabled=true; btn.textContent="Importando…";
+  const now=Date.now();
+  const docs=sel.map((r,k)=>({type:r.type,amount:r.amount,desc:r.desc,cat:r.cat,date:r.date,method:r.method,paid:true,note:"Importado do extrato",id:r.id,created:now+k,by:S.me.uid,group:null}));
+  try{
+    for(let i=0;i<docs.length;i+=400) await putTx(docs.slice(i,i+400));
+    impDlg.close(); IMP=[];
+    const last=docs.map(d=>d.date).sort().pop(); S.month=ymOf(last); render();
+    toast(`${docs.length} lançamentos importados`);
+  }catch(err){ $("#imp-err").textContent="Não foi possível salvar. Verifique a internet e tente de novo."; btn.disabled=false; impSummary(); }
 };
 
 /* ---------- navegação ---------- */
