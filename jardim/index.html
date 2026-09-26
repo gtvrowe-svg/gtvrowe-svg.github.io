@@ -98,9 +98,21 @@ td.low{color:var(--danger);font-weight:800}
 .bar i{display:block;height:100%;background:var(--leaf);border-radius:99px}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
 nav.tabs .in{display:flex;max-width:560px;width:100%}
-nav.tabs button{flex:1;background:transparent;color:var(--muted);border-radius:0;padding:10px 2px 12px;font-size:.78rem;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.tabs button{flex:1;background:transparent;color:var(--muted);border-radius:0;padding:10px 1px 12px;font-size:.7rem;display:flex;flex-direction:column;align-items:center;gap:2px}
 nav.tabs button span{font-size:1.25rem;line-height:1}
 nav.tabs button[aria-current="true"]{color:var(--plum);font-weight:800}
+.thumb{width:52px;height:52px;border-radius:12px;object-fit:cover;flex:none;background:var(--plum-soft)}
+.refrow{display:flex;gap:10px;align-items:flex-start}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.pcard{border-radius:14px;overflow:hidden;background:var(--bg);border:1px solid var(--line);padding:0;text-align:left;color:var(--ink);font-weight:400;display:block;width:100%}
+.pcard img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.pcard .semfoto{width:100%;aspect-ratio:1}
+.semfoto{display:grid;place-items:center;font-size:2rem;background:var(--plum-soft)}
+.pcard .pt{padding:8px 10px;font-size:.85rem}
+.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;display:flex;align-items:flex-end;justify-content:center;padding:env(safe-area-inset-top,0px) 0 0}
+.modal .box{background:var(--surface);width:100%;max-width:560px;max-height:90%;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.modal img{width:100%;border-radius:14px;display:block;margin-bottom:10px}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;z-index:9;display:none}
 .muted{color:var(--muted);font-size:.88rem}
 @media (prefers-reduced-motion:no-preference){.gbox{transition:background .25s,border-color .25s}}
@@ -134,16 +146,37 @@ const clone=o=>JSON.parse(JSON.stringify(o||{}));
 const GL=[['jejum','Jejum',95],['cafe','2h após café',120],['almoco','2h após almoço',120],['jantar','2h após jantar',120]];
 const REF=['Café da manhã','Lanche da manhã','Almoço','Lanche da tarde','Jantar','Ceia'];
 
+const PREMIOS_V2=[
+  {id:'v2-louca',nome:'Gustavo lava a louça',custo:500},
+  {id:'v2-banheiro',nome:'Gustavo lava o banheiro',custo:500},
+  {id:'v2-quintal',nome:'Gustavo lava o quintal',custo:1000},
+  {id:'v3-rainha',nome:'👑 Dia de rainha: Gustavo vira mordomo por um dia, com pano no braço, reverência e "pois não, Vossa Majestade?" a cada pedido',custo:2000},
+  {id:"v4-jantar",nome:"🍳 Gustavo faz o jantar da noite (cardápio aprovado pela coach)",custo:400},
+  {id:"v4-roupa",nome:"👕 Gustavo passa e dobra toda a roupa da semana",custo:600},
+  {id:"v4-cama",nome:"🛏️ Gustavo troca a roupa de cama e arruma o quarto",custo:300},
+  {id:"v4-cozinha",nome:"🧽 Faxina completa na cozinha: fogão, pia e geladeira por dentro",custo:800},
+  {id:"v4-enxoval",nome:"🍼 Gustavo organiza o enxoval e o cantinho do bebê",custo:700},
+  {id:"v4-lixo",nome:"🗑️ Uma semana levando o lixo e os recicláveis sem ela precisar pedir",custo:250},
+  {id:"v4-mercado",nome:"🛒 Gustavo faz o mercado da semana sozinho, com a lista dela",custo:350},
+  {id:"v4-casa",nome:"🧹 Gustavo aspira e passa pano na casa toda",custo:700},
+  {id:"v4-carro",nome:"🚗 Gustavo lava o carro",custo:600},
+  {id:"v4-cafe",nome:"☕ Café da manhã na cama preparado por Gustavo e Nicolas",custo:200},
+  {id:"v4-parque",nome:"🛝 Gustavo leva o Nicolas ao parque por 2 horas enquanto ela descansa",custo:300},
+  {id:"v4-noite",nome:"🛁 Gustavo cuida do banho, do jantar e da hora de dormir do Nicolas por uma noite",custo:250},
+  {id:"v4-sabado",nome:"😴 Sábado de manhã livre: Gustavo e Nicolas saem e ela dorme até tarde",custo:500},
+  {id:"v4-lanche",nome:"🧁 Gustavo e Nicolas preparam um lanche surpresa (saudável) para ela",custo:300},
+  {id:"v4-cartinha",nome:"💌 Gustavo e Nicolas fazem uma cartinha para o bebê e leem para a barriga",custo:150},
+  {id:"v4-cinema",nome:"🎬 Noite de cinema: ela escolhe o filme, os meninos montam a cabana de lençol",custo:350},
+  {id:"v4-show",nome:"🎤 Show de talentos de Gustavo e Nicolas (dança e música) só para ela",custo:200},
+  {id:"v4-passeio",nome:"🦁 Gustavo leva o Nicolas a um passeio especial e os dois trazem uma lembrança para ela",custo:900},
+  {id:"v4-brinquedos",nome:"🧸 Gustavo e Nicolas arrumam juntos todos os brinquedos",custo:250},
+  {id:"v4-spa",nome:"💅 Tarde de spa: massagem nos pés pelo Gustavo e unhas pintadas pelo Nicolas (esmalte infantil)",custo:400}
+];
 function defaultConfig(){return{
   gestRef:{data:'2026-09-25',semanas:17},
   metaAgua:10, vitaminas:['Polivitamínico gestacional','Ácido fólico'],
   insulinaPadrao:'NPH', pesoPre:null,
-  premios:[
-    {id:'p1',nome:'Massagem nos pés feita pelo Gustavo',custo:120},
-    {id:'p2',nome:'Ela escolhe o filme, ele faz a pipoca',custo:100},
-    {id:'p3',nome:'Café da manhã na cama',custo:200},
-    {id:'p4',nome:'Uma peça nova para o enxoval',custo:400}
-  ],
+  premios:PREMIOS_V2.map(p=>({...p})),
   resgates:[]
 }}
 
@@ -170,6 +203,23 @@ function saveConfig(){
   timers.cfg=setTimeout(()=>S.db.doc('config/geral').set(S.config).catch(()=>toast('Não salvou os ajustes na nuvem.')),400);
 }
 function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.display='block';clearTimeout(timers.t);timers.t=setTimeout(()=>el.style.display='none',2600)}
+
+/* ---------- fotos (IndexedDB, só neste aparelho) ---------- */
+const FDB={db:null,
+  abrir(){if(this.db)return Promise.resolve(this.db);return new Promise((ok,err)=>{const r=indexedDB.open('jardim-fotos',1);r.onupgradeneeded=()=>r.result.createObjectStore('fotos');r.onsuccess=()=>{this.db=r.result;ok(r.result)};r.onerror=()=>err(r.error)})},
+  async put(id,v){const db=await this.abrir();return new Promise((ok,err)=>{const tx=db.transaction('fotos','readwrite');tx.objectStore('fotos').put(v,id);tx.oncomplete=()=>ok();tx.onerror=()=>err(tx.error)})},
+  async get(id){const db=await this.abrir();return new Promise((ok,err)=>{const q=db.transaction('fotos').objectStore('fotos').get(id);q.onsuccess=()=>ok(q.result);q.onerror=()=>err(q.error)})},
+  async del(id){const db=await this.abrir();return new Promise(ok=>{const tx=db.transaction('fotos','readwrite');tx.objectStore('fotos').delete(id);tx.oncomplete=()=>ok();tx.onerror=()=>ok()})}
+};
+S.fotoCache={};
+function hidratarFotos(){
+  document.querySelectorAll('img[data-foto]').forEach(async im=>{
+    const id=im.dataset.foto;
+    try{const src=S.fotoCache[id]||(S.fotoCache[id]=await FDB.get(id));
+      if(src)im.src=src;else{const d=document.createElement('div');d.className=im.className+' semfoto';d.textContent='🍽️';im.replaceWith(d)}}catch(e){}
+  });
+}
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
 
 /* ---------- pontos ---------- */
 function pontosDia(o){
@@ -281,7 +331,7 @@ function vHoje(){
     <div class="row" style="margin-top:8px">${S.fotoBusy?'<button class="ghost" disabled>Analisando o prato…</button>':'<button class="ghost" data-act="foto">📷 Tirar foto</button><button class="ghost" data-act="galeria">🖼️ Da galeria</button>'}</div>
     <input id="fotoIn" type="file" accept="image/*" capture="environment" hidden>
     <input id="galIn" type="file" accept="image/*" hidden>
-    <ul class="list">${o.refeicoes.map((x,i)=>`<li><span><b>${esc(x.tipo)}</b> · ${esc(x.desc)}${x.carbo!=null?`<br><span class="muted">≈ ${esc(x.carbo)} g de carboidrato · ${esc(x.kcal)} kcal</span>`:''}${x.dica?`<br><span class="muted">💡 ${esc(x.dica)}</span>`:''}</span><button class="x" data-act="del" data-k="refeicoes" data-i="${i}" aria-label="Remover">×</button></li>`).join('')}</ul>
+    <ul class="list">${o.refeicoes.map((x,i)=>`<li><span class="refrow">${x.fotoId?`<img class="thumb" data-foto="${esc(x.fotoId)}" alt="">`:''}<span><b>${esc(x.tipo)}</b> · ${esc(x.desc)}${x.carbo!=null?`<br><span class="muted">≈ ${esc(x.carbo)} g de carboidrato · ${esc(x.kcal)} kcal</span>`:''}${x.dica?`<br><span class="muted">💡 ${esc(x.dica)}</span>`:''}</span></span><button class="x" data-act="del" data-k="refeicoes" data-i="${i}" aria-label="Remover">×</button></li>`).join('')}</ul>
     <p class="muted">A foto dá uma estimativa aproximada para entender o prato. Não use para ajustar dose de insulina.</p>
   </section>
   <section class="card"><h2>Água · ${agua} de ${meta} copos</h2>
@@ -360,8 +410,12 @@ function vPremios(){
     <div class="muted" style="margin-top:4px">${prox-t.total} pontos para a planta crescer de novo</div>
   </section>
   <section class="card"><h2>Prêmios</h2>
-    ${S.config.premios.map(p=>`<div class="reward"><div><div>${esc(p.nome)}</div><div class="cost">${p.custo} pontos</div></div>
-      <div class="row nf" style="gap:4px"><button class="small" data-act="resg" data-id="${p.id}" ${t.saldo<p.custo?'disabled':''}>Resgatar</button><button class="x" data-act="delP" data-id="${p.id}" aria-label="Remover prêmio">×</button></div></div>`).join('')}
+    ${S.config.premios.slice().sort((a,b)=>a.custo-b.custo).map(p=>S.editP===p.id?`<div class="reward" style="display:block">
+      <label class="f" for="eN">Prêmio</label><input id="eN" value="${esc(p.nome)}">
+      <div class="row" style="margin-top:8px"><div class="nf" style="width:110px"><label class="f" for="eC">Pontos</label><input id="eC" type="number" min="10" step="10" inputmode="numeric" value="${p.custo}"></div>
+      <button data-act="saveP" data-id="${p.id}">Salvar</button><button class="ghost" data-act="cancelP">Cancelar</button></div></div>`
+    :`<div class="reward"><div><div>${esc(p.nome)}</div><div class="cost">${p.custo} pontos</div></div>
+      <div class="row nf" style="gap:2px"><button class="small" data-act="resg" data-id="${p.id}" ${t.saldo<p.custo?'disabled':''}>Resgatar</button><button class="x" data-act="editP" data-id="${p.id}" aria-label="Editar prêmio">✏️</button><button class="x" data-act="delP" data-id="${p.id}" aria-label="Remover prêmio">×</button></div></div>`).join('')}
     <div class="row" style="margin-top:10px"><div><label class="f" for="pN">Novo prêmio</label><input id="pN" placeholder="Jantar no restaurante preferido"></div><div class="nf" style="width:90px"><label class="f" for="pC">Pontos</label><input id="pC" type="number" min="10" inputmode="numeric"></div></div>
     <button class="ghost" style="margin-top:10px;width:100%" data-act="addP">Adicionar prêmio</button>
   </section>
@@ -400,13 +454,43 @@ function vEu(){
   <p class="muted" style="text-align:center">${S.db?'Sincronizado na nuvem.':'Salvo neste aparelho.'}</p>`;
 }
 
-const TABS=[['hoje','Hoje','🌱'],['glic','Glicemia','🩸'],['coach','Coach','💬'],['premios','Prêmios','🌸'],['eu','Eu','👤']];
+const SEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+function totDia(o){const rs=(o&&o.refeicoes)||[],est=rs.filter(r=>r.carbo!=null);return{n:rs.length,est:est.length,carbo:est.reduce((a,r)=>a+(+r.carbo||0),0),kcal:est.reduce((a,r)=>a+(+r.kcal||0),0)}}
+function vPratos(){
+  const N=S.pratosDias||14;const ds=[];for(let i=0;i<N;i++){const d=addDays(hoje(),-i);if(S.dias[d]&&(S.dias[d].refeicoes||[]).length)ds.push(d)}
+  const sete=[...Array(7)].map((_,i)=>addDays(hoje(),i-6)),vals=sete.map(d=>totDia(S.dias[d]).carbo),mx=Math.max(200,...vals);
+  const W=330,H=130,bw=30,gap=(W-20-bw*7)/6;
+  const chart=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Carboidratos estimados por dia na última semana">${sete.map((d,i)=>{const v=vals[i],bh=v?Math.max(4,v/mx*(H-40)):2,x=10+i*(bw+gap);return `<rect x="${x}" y="${H-22-bh}" width="${bw}" height="${bh}" rx="6" fill="${v?'var(--plum)':'var(--line)'}"/>${v?`<text x="${x+bw/2}" y="${H-27-bh}" text-anchor="middle" font-size="10" fill="var(--muted)">${v}</text>`:''}<text x="${x+bw/2}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--muted)">${SEM[parse(d).getDay()]}</text>`}).join('')}</svg>`;
+  let modal='';
+  if(S.modal){const o=S.dias[S.modal.d],r=o&&o.refeicoes[S.modal.i];if(r)modal=`<div class="modal" data-act="fechar"><div class="box" onclick="event.stopPropagation()">
+    ${r.fotoId?`<img data-foto="${esc(r.fotoId)}" alt="Foto do prato">`:''}
+    <h2>${esc(r.tipo)} · ${SEM[parse(S.modal.d).getDay()]} ${br(S.modal.d)}</h2>
+    <p>${esc(r.desc)}</p>
+    ${r.carbo!=null?`<p><b>≈ ${esc(r.carbo)} g de carboidrato</b> · ${esc(r.kcal)} kcal</p>`:''}
+    ${r.dica?`<p class="muted">💡 ${esc(r.dica)}</p>`:''}
+    <button class="ghost" style="width:100%" data-act="fechar">Fechar</button></div></div>`}
+  return `
+  <section class="card"><h2>Carboidratos por dia (estimados)</h2>${chart}
+    <p class="muted">Carboidrato é o que mais pesa na glicemia; as calorias aparecem só como referência. Tudo é estimativa pela foto.</p></section>
+  ${ds.length?ds.map(d=>{const o=S.dias[d],t=totDia(o);return `<section class="card">
+    <h2>${d===hoje()?'Hoje':SEM[parse(d).getDay()]+' '+br(d)}</h2>
+    <p class="muted" style="margin:-6px 0 10px">${t.est?`≈ ${t.carbo} g carbo · ${t.kcal} kcal`:'Sem estimativas'}${t.est&&t.est<t.n?` (em ${t.est} de ${t.n} refeições)`:''}</p>
+    <div class="pgrid">${o.refeicoes.map((r,i)=>`<button class="pcard" data-act="verPrato" data-d="${d}" data-i="${i}">
+      ${r.fotoId?`<img data-foto="${esc(r.fotoId)}" alt="">`:'<div class="semfoto">🍽️</div>'}
+      <div class="pt"><b>${esc(r.tipo)}</b><div class="clamp muted">${esc(r.desc)}</div>${r.carbo!=null?`<div>≈ ${esc(r.carbo)} g carbo</div>`:''}</div></button>`).join('')}</div>
+  </section>`}).join(''):'<section class="card"><p class="muted">Nenhuma refeição registrada nesses dias. Use 📷 na aba Hoje para começar o diário.</p></section>'}
+  <button class="ghost" style="width:100%;margin:6px 0 12px" data-act="maisDias">Ver dias anteriores</button>
+  <p class="muted" style="text-align:center">As fotos ficam guardadas só neste celular.</p>
+  ${modal}`;
+}
+
+const TABS=[['hoje','Hoje','🌱'],['glic','Glicemia','🩸'],['pratos','Pratos','🍽️'],['coach','Coach','💬'],['premios','Prêmios','🌸'],['eu','Eu','👤']];
 function render(){
   const v=document.getElementById('view');
   const ae=document.activeElement;
   if(ae&&v.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&ae.type!=='checkbox'&&ae.type!=='file'){S.pendingRender=true;renderHeader();return}
   S.pendingRender=false;
-  v.innerHTML={hoje:vHoje,glic:vGlic,coach:vCoach,premios:vPremios,eu:vEu}[S.tab]();
+  v.innerHTML={hoje:vHoje,glic:vGlic,pratos:vPratos,coach:vCoach,premios:vPremios,eu:vEu}[S.tab]();hidratarFotos();
   renderHeader();
   document.getElementById('tabs').innerHTML=TABS.map(([k,n,i])=>`<button data-tab="${k}" aria-current="${S.tab===k}"><span aria-hidden="true">${i}</span>${n}</button>`).join('');
   const ch=document.getElementById('chat');if(ch)ch.scrollIntoView({block:'end'});
@@ -428,8 +512,9 @@ document.addEventListener('change',e=>{
   else if(el.id==='pesoPre'){S.config.pesoPre=el.value?+el.value:null;saveConfig()}
 });
 document.addEventListener('click',e=>{
+  if(e.target.classList&&e.target.classList.contains('modal')){S.modal=null;render();return}
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.tab){S.tab=b.dataset.tab;render();window.scrollTo(0,0);return}
+  if(b.dataset.tab){S.modal=null;S.editP=null;S.tab=b.dataset.tab;render();window.scrollTo(0,0);return}
   if(b.dataset.q){ask(b.dataset.q);return}
   const a=b.dataset.act;if(!a)return;const o=dia(S.sel);const val=id=>document.getElementById(id).value.trim();
   if(a==='dia'){const n=addDays(S.sel,+b.dataset.n);if(n<=hoje()){S.sel=n;render()}}
@@ -438,9 +523,15 @@ document.addEventListener('click',e=>{
   if(a==='galeria'){document.getElementById('galIn').click()}
   if(a==='addRef'){const d=val('refD');if(!d)return toast('Escreva o que ela comeu.');o.refeicoes.push({tipo:val('refT'),desc:d});saveDia(o)}
   if(a==='addAt'){const t=val('atT'),m=val('atM');if(!t||!m)return toast('Preencha atividade e minutos.');o.atividade.push({tipo:t,min:+m});saveDia(o)}
-  if(a==='del'){o[b.dataset.k].splice(+b.dataset.i,1);saveDia(o)}
+  if(a==='del'){const it=o[b.dataset.k][+b.dataset.i];if(it&&it.fotoId){FDB.del(it.fotoId).catch(()=>{});delete S.fotoCache[it.fotoId]}o[b.dataset.k].splice(+b.dataset.i,1);saveDia(o)}
+  if(a==='verPrato'){S.modal={d:b.dataset.d,i:+b.dataset.i};render()}
+  if(a==='fechar'){S.modal=null;render()}
+  if(a==='maisDias'){S.pratosDias=(S.pratosDias||14)+14;render()}
   if(a==='agua'){const n=+b.dataset.n;o.agua=(o.agua===n)?n-1:n;saveDia(o)}
   if(a==='addP'){const n=val('pN'),c=+val('pC');if(!n||!c)return toast('Preencha o prêmio e os pontos.');S.config.premios.push({id:'p'+Date.now(),nome:n,custo:c});saveConfig()}
+  if(a==='editP'){S.editP=b.dataset.id;render();const i=document.getElementById('eC');if(i)i.focus()}
+  if(a==='cancelP'){S.editP=null;render()}
+  if(a==='saveP'){const n=val('eN'),c=Math.round(+val('eC'));if(!n||!(c>0))return toast('Preencha o prêmio e os pontos.');S.config.premios=S.config.premios.map(p=>p.id===b.dataset.id?{...p,nome:n,custo:c}:p);S.editP=null;document.activeElement&&document.activeElement.blur();saveConfig();toast('Prêmio atualizado.')}
   if(a==='delP'){if(!confirm('Remover este prêmio?'))return;S.config.premios=S.config.premios.filter(p=>p.id!==b.dataset.id);saveConfig()}
   if(a==='resg'){const p=S.config.premios.find(p=>p.id===b.dataset.id);if(!p||!confirm(`Resgatar "${p.nome}" por ${p.custo} pontos?`))return;S.config.resgates=[...(S.config.resgates||[]),{nome:p.nome,custo:p.custo,data:hoje()}];saveConfig();toast('Resgatado! Hora de cobrar o Gustavo 🌸')}
   if(a==='saveCfg'){const c=S.config;const s=+val('cSem');if(s>0)c.gestRef={data:hoje(),semanas:s};c.metaAgua=Math.max(4,+val('cAgua')||10);c.insulinaPadrao=val('cIns')||'NPH';c.vitaminas=val('cVit').split(',').map(x=>x.trim()).filter(Boolean);saveConfig();toast('Ajustes salvos.')}
@@ -475,20 +566,20 @@ async function ask(q){
   S.busy=false;render();
 }
 
-async function reduzir(file){
+async function reduzir(file,max=900,q=.75){
   const url=URL.createObjectURL(file);
   const img=await new Promise((ok,err)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=err;i.src=url});
-  const max=900,k=Math.min(1,max/Math.max(img.width,img.height));
+  const k=Math.min(1,max/Math.max(img.width,img.height));
   const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
   c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
-  return c.toDataURL('image/jpeg',0.75).split(',')[1];
+  return c.toDataURL('image/jpeg',q);
 }
 async function analisarFoto(file){
   if(!/^https:/.test(COACH_URL))return toast('Coach ainda não configurado.');
   const dataSel=S.sel;const tipoEl=document.getElementById('refT');const tipo=tipoEl?tipoEl.value:'Refeição';
   S.fotoBusy=true;render();
   try{
-    const foto=await reduzir(file);
+    const foto=(await reduzir(file)).split(',')[1];const mini=await reduzir(file,520,.7);
     const r=await fetch(COACH_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({foto,refeicao:tipo})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.erro||r.status);
@@ -497,7 +588,8 @@ async function analisarFoto(file){
     else{
       const o=dia(dataSel);
       const desc=(a.itens||[]).map(x=>x.nome+(x.porcao?' ('+x.porcao+')':'')).join(', ')||'Prato fotografado';
-      o.refeicoes.push({tipo,desc,carbo:Math.round(+a.carbo_total_g||0),kcal:Math.round(+a.kcal_total||0),dica:a.dica||''});
+      let fotoId=null;try{fotoId='f'+Date.now();await FDB.put(fotoId,mini);S.fotoCache[fotoId]=mini}catch(e){fotoId=null}
+      o.refeicoes.push({tipo,desc,carbo:Math.round(+a.carbo_total_g||0),kcal:Math.round(+a.kcal_total||0),dica:a.dica||'',fotoId});
       S.fotoBusy=false;saveDia(o);toast('Refeição adicionada pela foto.');return;
     }
   }catch(e){toast('Não consegui analisar agora ('+e.message+').')}
@@ -506,6 +598,8 @@ async function analisarFoto(file){
 
 /* ---------- nuvem ---------- */
 if(!S.config.inicio){S.config.inicio=hoje();cache()}
+if((S.config.premiosVersao||1)<3){S.config.premios=PREMIOS_V2.map(p=>({...p}));S.config.premiosVersao=4;cache()}
+else if(S.config.premiosVersao<4){const tem=new Set(S.config.premios.map(p=>p.id));PREMIOS_V2.forEach(p=>{if(!tem.has(p.id))S.config.premios.push({...p})});S.config.premiosVersao=4;cache()}
 render();
 (async()=>{
   if(!(window.claude&&claude.use))return;
