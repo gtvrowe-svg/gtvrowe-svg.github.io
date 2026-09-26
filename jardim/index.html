@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#5B2A4A">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Nosso Jardim — gestação e glicemia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F1F6; --surface:#FFFFFF; --ink:#2A1A26; --muted:#6F5E6B; --line:#E4DCE3;
+  --plum:#5B2A4A; --plum-soft:#EFE3EB; --leaf:#2F8F6B; --leaf-soft:#E2F3EB;
+  --amber:#B86E0A; --amber-soft:#FBEFD9; --danger:#B3261E; --danger-soft:#FBE3E1;
+  --water:#2C7DB8; --water-soft:#E2EFF8;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1A1218; --surface:#251B22; --ink:#F3E9F0; --muted:#B9A7B4; --line:#3A2D36;
+    --plum:#D9A6C6; --plum-soft:#3A2533; --leaf:#6FCF9F; --leaf-soft:#1E3329;
+    --amber:#F0B25A; --amber-soft:#3A2C17; --danger:#FF8A80; --danger-soft:#3D1F1D;
+    --water:#7DB9E8; --water-soft:#1B2B38; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1A1218; --surface:#251B22; --ink:#F3E9F0; --muted:#B9A7B4; --line:#3A2D36;
+  --plum:#D9A6C6; --plum-soft:#3A2533; --leaf:#6FCF9F; --leaf-soft:#1E3329;
+  --amber:#F0B25A; --amber-soft:#3A2C17; --danger:#FF8A80; --danger-soft:#3D1F1D;
+  --water:#7DB9E8; --water-soft:#1B2B38; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 110px}
+header.top{padding:20px 0 8px;display:flex;gap:14px;align-items:center}
+.plantbox{width:84px;height:84px;flex:none;border-radius:50%;background:var(--plum-soft);display:grid;place-items:center}
+.week{font-size:2rem;font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--plum)}
+.sub{color:var(--muted);font-size:.9rem}
+.chips{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.82rem;font-weight:600}
+h2{font-size:1.05rem;margin:0 0 10px;font-weight:700}
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+.daybar{display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px}
+.daybar b{font-size:1.1rem}
+button{font:inherit;cursor:pointer;border:none;border-radius:12px;padding:10px 14px;background:var(--plum);color:var(--surface);font-weight:600}
+button.ghost{background:transparent;color:var(--plum);border:1px solid var(--line)}
+button.small{padding:6px 10px;font-size:.85rem}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--plum);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:100%;min-width:0}
+label.f{display:block;font-size:.82rem;color:var(--muted);font-weight:600;margin-bottom:4px}
+.grid4{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gbox{border-radius:14px;padding:10px;background:var(--bg);border:2px solid transparent}
+.gbox.ok{background:var(--leaf-soft);border-color:var(--leaf)}
+.gbox.high{background:var(--amber-soft);border-color:var(--amber)}
+.gbox.low{background:var(--danger-soft);border-color:var(--danger)}
+.gbox input{font-size:1.4rem;font-weight:700;background:transparent;border:none;padding:2px 0}
+.gbox .meta{font-size:.75rem;color:var(--muted)}
+.row{display:flex;gap:8px;align-items:end}
+.row>*{flex:1}
+.row>.nf{flex:none}
+ul.list{list-style:none;margin:10px 0 0;padding:0}
+ul.list li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:.93rem}
+.x{background:transparent;color:var(--muted);padding:4px 8px;font-size:1.1rem}
+.drops{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.drop{width:30px;height:38px;padding:0;background:transparent;border-radius:8px}
+.drop svg path{fill:var(--water-soft);stroke:var(--water);stroke-width:1.5}
+.drop.on svg path{fill:var(--water)}
+.check{display:flex;gap:10px;align-items:center;padding:6px 0}
+.check input{width:22px;height:22px;accent-color:var(--leaf)}
+.alert{border-radius:14px;padding:12px;margin:12px 0;font-size:.92rem}
+.alert.danger{background:var(--danger-soft);color:var(--ink);border:1px solid var(--danger)}
+.alert.info{background:var(--plum-soft)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line)}
+th{font-size:.75rem;color:var(--muted);font-weight:600}
+td.ok{color:var(--leaf);font-weight:700}
+td.high{color:var(--amber);font-weight:700}
+td.low{color:var(--danger);font-weight:800}
+.big{font-size:2.4rem;font-weight:800;letter-spacing:-.02em;line-height:1}
+.chat{display:flex;flex-direction:column;gap:10px}
+.bub{padding:10px 12px;border-radius:16px;max-width:88%;white-space:pre-wrap;font-size:.95rem}
+.bub.u{align-self:flex-end;background:var(--plum);color:var(--surface);border-bottom-right-radius:4px}
+.bub.a{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.reward{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.reward .cost{font-weight:800;color:var(--plum)}
+.bar{height:10px;border-radius:99px;background:var(--plum-soft);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--leaf);border-radius:99px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav.tabs .in{display:flex;max-width:560px;width:100%}
+nav.tabs button{flex:1;background:transparent;color:var(--muted);border-radius:0;padding:10px 2px 12px;font-size:.78rem;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.tabs button span{font-size:1.25rem;line-height:1}
+nav.tabs button[aria-current="true"]{color:var(--plum);font-weight:800}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;z-index:9;display:none}
+.muted{color:var(--muted);font-size:.88rem}
+@media (prefers-reduced-motion:no-preference){.gbox{transition:background .25s,border-color .25s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="plantbox" id="plantSmall"></div>
+    <div>
+      <div class="week" id="weekLbl">Semana —</div>
+      <div class="sub">Um dia de cada vez, juntos.</div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </header>
+  <main id="view"></main>
+</div>
+<nav class="tabs"><div class="in" id="tabs"></div></nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const hoje=()=>iso(new Date());
+const parse=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
+const br=s=>{const d=parse(s);return pad(d.getDate())+'/'+pad(d.getMonth()+1)};
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o||{}));
+
+const GL=[['jejum','Jejum',95],['cafe','2h após café',120],['almoco','2h após almoço',120],['jantar','2h após jantar',120]];
+const REF=['Café da manhã','Lanche da manhã','Almoço','Lanche da tarde','Jantar','Ceia'];
+
+function defaultConfig(){return{
+  gestRef:{data:'2026-09-25',semanas:17},
+  metaAgua:10, vitaminas:['Polivitamínico gestacional','Ácido fólico'],
+  insulinaPadrao:'NPH', pesoPre:null,
+  premios:[
+    {id:'p1',nome:'Massagem nos pés feita pelo Gustavo',custo:120},
+    {id:'p2',nome:'Ela escolhe o filme, ele faz a pipoca',custo:100},
+    {id:'p3',nome:'Café da manhã na cama',custo:200},
+    {id:'p4',nome:'Uma peça nova para o enxoval',custo:400}
+  ],
+  resgates:[]
+}}
+
+const S={dias:{},config:defaultConfig(),db:null,sel:hoje(),tab:'hoje',chat:[],busy:false,pendingRender:false};
+try{const c=JSON.parse(localStorage.getItem('jardim-cache')||'null');if(c){S.dias=c.dias||{};S.config={...defaultConfig(),...c.config}}}catch(e){}
+const HIST={"2026-08-10":{jejum:97,almoco:99},"2026-08-11":{jejum:105,jantar:119},"2026-08-12":{jejum:99,cafe:96,almoco:97},"2026-08-13":{jejum:101},"2026-08-17":{cafe:97,almoco:104,jantar:105},"2026-08-18":{jejum:104},"2026-08-20":{jejum:100,cafe:90,almoco:93},"2026-08-21":{jejum:100},"2026-08-23":{cafe:102,almoco:101},"2026-08-24":{jejum:101,cafe:97},"2026-08-25":{jejum:98},"2026-08-26":{jejum:107,cafe:93},"2026-08-27":{jejum:106},"2026-08-28":{jejum:97},"2026-08-31":{almoco:89},"2026-09-01":{jejum:100,cafe:90,almoco:101},"2026-09-02":{jejum:96,cafe:99},"2026-09-04":{jejum:100,cafe:97},"2026-09-08":{cafe:87,almoco:96},"2026-09-09":{jejum:108,cafe:101}};
+if(!localStorage.getItem('jardim-cache')){Object.entries(HIST).forEach(([d,g])=>{S.dias[d]={data:d,glic:g,insulina:[],refeicoes:[],agua:0,atividade:[],vitaminas:{},peso:null}});}
+function cache(){try{localStorage.setItem('jardim-cache',JSON.stringify({dias:S.dias,config:S.config}))}catch(e){}}
+
+function emptyDia(d){return{data:d,glic:{},insulina:[],refeicoes:[],agua:0,atividade:[],vitaminas:{},peso:null}}
+function dia(d){return {...emptyDia(d),...clone(S.dias[d])}}
+
+const timers={};
+function saveDia(o){
+  S.dias[o.data]=o;cache();render();
+  if(!S.db)return;
+  clearTimeout(timers[o.data]);
+  timers[o.data]=setTimeout(()=>S.db.collection('dias').doc(o.data).set(o).catch(()=>toast('Não salvou na nuvem. Os dados ficam neste aparelho.')),400);
+}
+function saveConfig(){
+  cache();render();
+  if(!S.db)return;
+  clearTimeout(timers.cfg);
+  timers.cfg=setTimeout(()=>S.db.doc('config/geral').set(S.config).catch(()=>toast('Não salvou os ajustes na nuvem.')),400);
+}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.display='block';clearTimeout(timers.t);timers.t=setTimeout(()=>el.style.display='none',2600)}
+
+/* ---------- pontos ---------- */
+function pontosDia(o){
+  let p=0;const g=o.glic||{};
+  GL.forEach(([k])=>{if(g[k]!=null)p+=5});
+  p+=Math.min((o.insulina||[]).length,2)*10;
+  p+=Math.min((o.refeicoes||[]).length,6)*3;
+  if((o.agua||0)>=S.config.metaAgua)p+=10;
+  if((o.atividade||[]).reduce((a,b)=>a+(+b.min||0),0)>=20)p+=10;
+  const vs=S.config.vitaminas;if(vs.length&&vs.every(v=>o.vitaminas&&o.vitaminas[v]))p+=5;
+  if(o.peso)p+=5;
+  const pos=['cafe','almoco','jantar'].filter(k=>g[k]!=null).length;
+  if(g.jejum!=null&&pos>=2)p+=10;
+  return p;
+}
+function totais(){
+  const total=Object.values(S.dias).reduce((a,o)=>a+pontosDia(o),0);
+  const gasto=(S.config.resgates||[]).reduce((a,r)=>a+r.custo,0);
+  let seq=0,d=hoje();
+  if(!(S.dias[d]&&S.dias[d].glic&&S.dias[d].glic.jejum!=null))d=addDays(d,-1);
+  while(S.dias[d]&&S.dias[d].glic&&S.dias[d].glic.jejum!=null){seq++;d=addDays(d,-1)}
+  return{total,saldo:total-gasto,seq,nivel:Math.floor(total/80)};
+}
+function semanaAtual(){
+  const r=S.config.gestRef;const dd=Math.round((parse(hoje())-parse(r.data))/864e5);
+  const tot=r.semanas*7+dd;return{s:Math.floor(tot/7),d:tot%7};
+}
+
+/* ---------- planta (recompensa visual) ---------- */
+function temRegistro(o){return !!o&&(Object.keys(o.glic||{}).length||(o.refeicoes||[]).length||(o.insulina||[]).length||o.agua||(o.atividade||[]).length||o.peso||Object.values(o.vitaminas||{}).some(Boolean))}
+function cuidado(){
+  const ini=S.config.inicio||hoje(),t=hoje();
+  const conta=f=>{if(f(S.dias[t]))return 0;let n=0,d=addDays(t,-1);while(d>=ini&&!f(S.dias[d])){n++;d=addDays(d,-1)}return n};
+  const semAt=conta(o=>o&&(o.atividade||[]).length>0),semReg=conta(temRegistro);
+  const dias=Math.max(semAt,semReg);
+  return{semAt,semReg,murcha:dias>=2,grau:dias>=4?2:1,motivo:semReg>=2?'registro':'atividade',dias};
+}
+function planta(nivel,size,est){
+  est=est||cuidado();const m=est.murcha,g=est.grau;
+  const lv=Math.min(nivel,14),H=24+lv*3.4;
+  const C={leaf:m?'#A3A15E':'#5DBB8A',leafDk:m?'#838148':'#3F9A6C',stem:m?'#8E8C52':'#4FA878',pet:m?'#CDA9B8':'#F4A6C6',petDk:m?'#B4919F':'#E27FA8',mid:m?'#D9C27A':'#F7C948'};
+  const P0=[60,96];let P1,P2,P3;
+  if(!m){P1=[54,96-H*.35];P2=[66,96-H*.7];P3=[60,96-H]}
+  else if(g===1){P1=[58,96-H*.4];P2=[60+H*.1,96-H*.95];P3=[60+H*.35,96-H*.78]}
+  else{P1=[58,96-H*.4];P2=[60+H*.25,96-H*1.0];P3=[60+H*.5,96-H*.55]}
+  const bz=t=>{const u=1-t;return[0,1].map(k=>u*u*u*P0[k]+3*u*u*t*P1[k]+3*u*t*t*P2[k]+t*t*t*P3[k])};
+  const n=Math.min(1+Math.floor(lv/2),6),ang=!m?-32:(g===1?35:62);
+  let leaves='',extra=[];
+  for(let i=0;i<n;i++){
+    const t=.22+i*(.6/n),[x,y]=bz(t),side=i%2?-1:1,sc=.75+.25*(1-i/n);
+    leaves+=`<g transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${side*sc},${sc}) rotate(${ang})"><path d="M0 0 C5 -9 16 -10 23 -3 C16 3 6 4 0 0Z" fill="${C.leaf}"/><path d="M1 0 Q11 -3 20 -3" stroke="${C.leafDk}" stroke-width="1" fill="none" stroke-linecap="round"/></g>`;
+    const r=ang*Math.PI/180;extra.push([x+side*sc*21*Math.cos(r),y+sc*21*Math.sin(r)]);
+  }
+  const flor=(x,y,s,rot)=>`<g transform="translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${rot}) scale(${s})">${[0,1,2,3,4].map(k=>`<ellipse cx="0" cy="-8.5" rx="5.8" ry="8.5" fill="${k%2?C.petDk:C.pet}" transform="rotate(${k*72})"/>`).join('')}<circle r="5.2" fill="${C.mid}"/><circle cx="-1.6" cy="-1.6" r="1.5" fill="#fff" opacity=".6"/></g>`;
+  let topo='';const rot=!m?0:(g===1?55:100);
+  if(lv>=4)topo=flor(P3[0],P3[1],.75+Math.min(lv-4,10)*.035,rot);
+  else if(lv>=2)topo=`<g transform="translate(${P3[0]},${P3[1]}) rotate(${rot})"><ellipse cx="0" cy="-5" rx="4" ry="6.5" fill="${C.pet}"/><path d="M-4.5 0 Q0 -5 4.5 0 Q0 2 -4.5 0Z" fill="${C.leaf}"/></g>`;
+  else topo=`<g transform="translate(${P3[0]},${P3[1]}) rotate(${rot})"><path d="M0 0 C-3 -6 -10 -7 -12 -3 C-8 0 -3 1 0 0Z" fill="${C.leaf}"/><path d="M0 0 C3 -6 10 -7 12 -3 C8 0 3 1 0 0Z" fill="${C.leaf}"/></g>`;
+  let mini='';
+  if(!m&&lv>=8&&extra[n-2])mini+=flor(extra[n-2][0],extra[n-2][1],.42,-20);
+  if(!m&&lv>=12&&extra[n-3])mini+=flor(extra[n-3][0],extra[n-3][1],.4,15);
+  const star=(x,y,r)=>`<path d="M${x} ${y-r} Q${x} ${y} ${x+r} ${y} Q${x} ${y} ${x} ${y+r} Q${x} ${y} ${x-r} ${y} Q${x} ${y} ${x} ${y-r}Z" fill="#F7C948"/>`;
+  const brilho=!m&&lv>=10?star(26,38,5)+star(96,28,4)+star(92,60,3):'';
+  const olhos=!m?`<circle cx="51" cy="111" r="2.3" fill="#4A2A1F"/><circle cx="69" cy="111" r="2.3" fill="#4A2A1F"/><circle cx="51.8" cy="110.2" r=".7" fill="#fff"/><circle cx="69.8" cy="110.2" r=".7" fill="#fff"/>`
+    :`<path d="M48.5 111 q2.5 2.2 5 0 M66.5 111 q2.5 2.2 5 0" stroke="#4A2A1F" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+  const boca=!m?`<path d="M56.5 116 q3.5 3.6 7 0" stroke="#4A2A1F" stroke-width="1.6" fill="none" stroke-linecap="round"/>`:`<path d="M56.5 119 q3.5 -3 7 0" stroke="#4A2A1F" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+  const gota=m?`<path d="M95 94 C92 99 91 101 91 103 a4 4 0 0 0 8 0 C99 101 98 99 95 94Z" fill="#8CC8F0"/>`:'';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 120 132" role="img" aria-label="${m?'Plantinha murcha, com sede':'Plantinha no nível '+nivel}">
+    ${brilho}
+    <path d="M${P0} C${P1} ${P2} ${P3}" stroke="${C.stem}" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    ${leaves}${mini}${topo}
+    <path d="M34 97 H86 L80.5 125 Q79.5 129 75.5 129 H44.5 Q40.5 129 39.5 125Z" fill="#D9895B"/>
+    <rect x="30" y="90" width="60" height="10" rx="5" fill="#E8A077"/>
+    <ellipse cx="60" cy="91.5" rx="25" ry="2.6" fill="#6B4430"/>
+    ${olhos}${!m?'<ellipse cx="45" cy="116" rx="3.6" ry="2.1" fill="#F29B9B" opacity=".75"/><ellipse cx="75" cy="116" rx="3.6" ry="2.1" fill="#F29B9B" opacity=".75"/>':''}${boca}${gota}
+  </svg>`;
+}
+
+/* ---------- views ---------- */
+function vHoje(){
+  const o=dia(S.sel);const g=o.glic;
+  const st=(k,v,lim)=>v==null?'':v<70?'low':v<lim?'ok':'high';
+  const baixo=GL.some(([k])=>g[k]!=null&&g[k]<70);
+  const agua=o.agua||0,meta=S.config.metaAgua;
+  const ativMin=o.atividade.reduce((a,b)=>a+(+b.min||0),0);
+  return `
+  <div class="daybar">
+    <button class="ghost small" data-act="dia" data-n="-1" aria-label="Dia anterior">‹</button>
+    <b>${S.sel===hoje()?'Hoje':br(S.sel)}</b>
+    <button class="ghost small" data-act="dia" data-n="1" aria-label="Próximo dia" ${S.sel>=hoje()?'disabled':''}>›</button>
+  </div>
+  ${(()=>{const c=cuidado();return S.sel===hoje()&&c.murcha?`<div class="alert info">🥀 <b>A plantinha está com sede.</b> ${c.motivo==='atividade'?`Faz ${c.semAt} dias sem atividade. Uma caminhada leve (se liberada pelo obstetra) já faz ela voltar a ficar bonita.`:`Faz ${c.semReg} dias sem registros. Anotar qualquer coisa de hoje já faz ela se recuperar.`}</div>`:''})()}
+  ${baixo?`<div class="alert danger"><b>Glicemia abaixo de 70.</b> Siga o plano que o médico passou para hipoglicemia e meça de novo. Se não melhorar ou ela se sentir mal, procure atendimento.</div>`:''}
+  <section class="card"><h2>Glicemia</h2>
+    <div class="grid4">${GL.map(([k,n,lim])=>`<div class="gbox ${st(k,g[k],lim)}"><label class="f" for="g_${k}">${n}</label><input id="g_${k}" type="number" inputmode="numeric" min="30" max="400" data-g="${k}" value="${g[k]??''}" placeholder="—"><div class="meta">meta &lt; ${lim}</div></div>`).join('')}</div>
+  </section>
+  <section class="card"><h2>Insulina</h2>
+    <div class="row"><div><label class="f" for="insT">Tipo</label><input id="insT" value="${esc(S.config.insulinaPadrao)}"></div>
+    <div><label class="f" for="insU">Unidades</label><input id="insU" type="number" inputmode="decimal" min="0"></div>
+    <div><label class="f" for="insH">Hora</label><input id="insH" type="time"></div></div>
+    <button style="margin-top:10px;width:100%" data-act="addIns">Registrar dose</button>
+    <ul class="list">${o.insulina.map((x,i)=>`<li><span>${esc(x.hora||'')} · ${esc(x.tipo)} ${esc(x.un)} UI</span><button class="x" data-act="del" data-k="insulina" data-i="${i}" aria-label="Remover">×</button></li>`).join('')}</ul>
+    <p class="muted">A dose é sempre a que o endocrinologista definiu.</p>
+  </section>
+  <section class="card"><h2>Refeições${o.refeicoes.some(r=>r.carbo!=null)?` · ≈ ${o.refeicoes.reduce((a,r)=>a+(+r.carbo||0),0)} g carbo`:''}</h2>
+    <div class="row"><div class="nf" style="width:42%"><label class="f" for="refT">Refeição</label><select id="refT">${REF.map(r=>`<option>${r}</option>`).join('')}</select></div>
+    <div><label class="f" for="refD">O que comeu</label><input id="refD" placeholder="ex.: 1 pão integral, ovo, café"></div></div>
+    <button style="margin-top:10px;width:100%" data-act="addRef">Adicionar refeição</button>
+    <div class="row" style="margin-top:8px">${S.fotoBusy?'<button class="ghost" disabled>Analisando o prato…</button>':'<button class="ghost" data-act="foto">📷 Tirar foto</button><button class="ghost" data-act="galeria">🖼️ Da galeria</button>'}</div>
+    <input id="fotoIn" type="file" accept="image/*" capture="environment" hidden>
+    <input id="galIn" type="file" accept="image/*" hidden>
+    <ul class="list">${o.refeicoes.map((x,i)=>`<li><span><b>${esc(x.tipo)}</b> · ${esc(x.desc)}${x.carbo!=null?`<br><span class="muted">≈ ${esc(x.carbo)} g de carboidrato · ${esc(x.kcal)} kcal</span>`:''}${x.dica?`<br><span class="muted">💡 ${esc(x.dica)}</span>`:''}</span><button class="x" data-act="del" data-k="refeicoes" data-i="${i}" aria-label="Remover">×</button></li>`).join('')}</ul>
+    <p class="muted">A foto dá uma estimativa aproximada para entender o prato. Não use para ajustar dose de insulina.</p>
+  </section>
+  <section class="card"><h2>Água · ${agua} de ${meta} copos</h2>
+    <div class="drops">${Array.from({length:meta},(_,i)=>`<button class="drop ${i<agua?'on':''}" data-act="agua" data-n="${i+1}" aria-label="${i+1} copos"><svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 3 C9 13 5 19 5 25 a10 10 0 0 0 20 0 C25 19 21 13 15 3z"/></svg></button>`).join('')}</div>
+    <p class="muted">Cada gota é um copo de 250 ml.</p>
+  </section>
+  <section class="card"><h2>Atividade · ${ativMin} min</h2>
+    <div class="row"><div><label class="f" for="atT">Atividade</label><input id="atT" placeholder="Caminhada após o almoço"></div>
+    <div class="nf" style="width:90px"><label class="f" for="atM">Minutos</label><input id="atM" type="number" inputmode="numeric" min="1"></div></div>
+    <button style="margin-top:10px;width:100%" data-act="addAt">Adicionar atividade</button>
+    <ul class="list">${o.atividade.map((x,i)=>`<li><span>${esc(x.tipo)} · ${esc(x.min)} min</span><button class="x" data-act="del" data-k="atividade" data-i="${i}" aria-label="Remover">×</button></li>`).join('')}</ul>
+    <p class="muted">Só atividades liberadas pelo obstetra.</p>
+  </section>
+  <section class="card"><h2>Vitaminas</h2>
+    ${S.config.vitaminas.map(v=>`<label class="check"><input type="checkbox" data-vit="${esc(v)}" ${o.vitaminas[v]?'checked':''}> ${esc(v)}</label>`).join('')||'<p class="muted">Adicione as vitaminas na aba Eu.</p>'}
+  </section>
+  <section class="card"><h2>Peso</h2>
+    <label class="f" for="peso">Peso de hoje (kg)</label><input id="peso" type="number" inputmode="decimal" step="0.1" value="${o.peso??''}" placeholder="Uma vez por semana basta">
+  </section>
+  <p class="muted" style="text-align:center">Este dia vale ${pontosDia(o)} pontos no jardim.</p>`;
+}
+
+function vGlic(){
+  const ds=Object.keys(S.dias).filter(d=>S.dias[d].glic&&Object.keys(S.dias[d].glic).length).sort().reverse();
+  const cls=(v,lim)=>v==null?'':v<70?'low':v<lim?'ok':'high';
+  const ult7=ds.filter(d=>d>addDays(hoje(),-7));
+  const j7=ult7.map(d=>S.dias[d].glic.jejum).filter(v=>v!=null);
+  const p7=ult7.flatMap(d=>['cafe','almoco','jantar'].map(k=>S.dias[d].glic[k])).filter(v=>v!=null);
+  const jOk=j7.filter(v=>v<95&&v>=70).length,pOk=p7.filter(v=>v<120&&v>=70).length;
+  const pts=ds.slice().reverse().filter(d=>S.dias[d].glic.jejum!=null).slice(-21).map(d=>[d,S.dias[d].glic.jejum]);
+  const W=340,H=150,lo=70,hi=130,x=i=>20+i*((W-30)/Math.max(pts.length-1,1)),y=v=>H-15-(Math.min(Math.max(v,lo),hi)-lo)/(hi-lo)*(H-30);
+  const chart=pts.length?`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Gráfico da glicemia de jejum">
+    <rect x="20" y="${y(95)}" width="${W-30}" height="${y(70)-y(95)}" fill="var(--leaf-soft)"/>
+    <line x1="20" x2="${W-10}" y1="${y(95)}" y2="${y(95)}" stroke="var(--leaf)" stroke-dasharray="4 4"/>
+    <text x="22" y="${y(95)-4}" font-size="10" fill="var(--leaf)">meta 95</text>
+    <polyline fill="none" stroke="var(--plum)" stroke-width="2" points="${pts.map((p,i)=>x(i)+','+y(p[1])).join(' ')}"/>
+    ${pts.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p[1])}" r="3.5" fill="${p[1]<95?'var(--leaf)':'var(--amber)'}"/>`).join('')}
+  </svg>`:'<p class="muted">Sem medições de jejum ainda.</p>';
+  return `
+  <section class="card"><h2>Últimos 7 dias</h2>
+    <div class="grid4">
+      <div><div class="big">${j7.length?jOk+'/'+j7.length:'—'}</div><div class="muted">jejum na meta</div></div>
+      <div><div class="big">${p7.length?pOk+'/'+p7.length:'—'}</div><div class="muted">pós-refeição na meta</div></div>
+    </div>
+  </section>
+  <section class="card"><h2>Jejum ao longo do tempo</h2>${chart}</section>
+  <section class="card"><h2>Histórico</h2>
+    <div class="tbl"><table><thead><tr><th>Dia</th><th>Jejum</th><th>Café</th><th>Almoço</th><th>Jantar</th><th>Insulina</th></tr></thead><tbody>
+    ${ds.map(d=>{const g=S.dias[d].glic,ins=(S.dias[d].insulina||[]).map(i=>i.un).join('+');return `<tr><td>${br(d)}</td>${GL.map(([k,,lim])=>`<td class="${cls(g[k],lim)}">${g[k]??'–'}</td>`).join('')}<td>${ins||'–'}</td></tr>`}).join('')}
+    </tbody></table></div>
+    <p class="muted">Mostre esta tela na consulta. Verde está na meta, laranja acima.</p>
+  </section>`;
+}
+
+function vCoach(){
+  return `
+  <div class="alert info">Coach de alimentação e hábitos. Ela ajuda com cardápio e rotina, mas não mexe em insulina: dose é só com o médico.</div>
+  <div class="quick">
+    <button class="ghost small" data-q="Monte um cardápio para hoje, com 6 refeições, pensando no meu jejum.">Cardápio de hoje</button>
+    <button class="ghost small" data-q="O que é uma boa ceia para ajudar a glicemia de jejum?">Ideias de ceia</button>
+    <button class="ghost small" data-q="Analise minha última semana e me dê 3 ajustes simples de hábito.">Analisar minha semana</button>
+    <button class="ghost small" data-q="Me dê opções de lanche da tarde práticos para levar na bolsa.">Lanches práticos</button>
+  </div>
+  <div class="chat" id="chat">${S.chat.map(m=>`<div class="bub ${m.role==='user'?'u':'a'}">${esc(m.content)||'Pensando…'}</div>`).join('')||'<p class="muted">Pergunte qualquer coisa sobre comida, rotina ou como montar o prato.</p>'}</div>
+  <div class="row" style="margin-top:12px"><div><label class="f" for="cq">Sua pergunta</label><textarea id="cq" rows="2" placeholder="Posso comer tapioca no café?"></textarea></div><button class="nf" data-act="ask" ${S.busy?'disabled':''}>Enviar</button></div>`;
+}
+
+function vPremios(){
+  const t=totais();const prox=(t.nivel+1)*80;
+  return `
+  <section class="card" style="text-align:center">
+    ${planta(t.nivel,160)}
+    <div class="big">${t.saldo} pontos</div>
+    <div class="muted">nível ${t.nivel} · ${t.total} pontos no total · ${t.seq} dias seguidos medindo o jejum</div>
+    <div class="bar" aria-hidden="true"><i style="width:${((t.total%80)/80*100).toFixed(0)}%"></i></div>
+    <div class="muted" style="margin-top:4px">${prox-t.total} pontos para a planta crescer de novo</div>
+  </section>
+  <section class="card"><h2>Prêmios</h2>
+    ${S.config.premios.map(p=>`<div class="reward"><div><div>${esc(p.nome)}</div><div class="cost">${p.custo} pontos</div></div>
+      <div class="row nf" style="gap:4px"><button class="small" data-act="resg" data-id="${p.id}" ${t.saldo<p.custo?'disabled':''}>Resgatar</button><button class="x" data-act="delP" data-id="${p.id}" aria-label="Remover prêmio">×</button></div></div>`).join('')}
+    <div class="row" style="margin-top:10px"><div><label class="f" for="pN">Novo prêmio</label><input id="pN" placeholder="Jantar no restaurante preferido"></div><div class="nf" style="width:90px"><label class="f" for="pC">Pontos</label><input id="pC" type="number" min="10" inputmode="numeric"></div></div>
+    <button class="ghost" style="margin-top:10px;width:100%" data-act="addP">Adicionar prêmio</button>
+  </section>
+  <section class="card"><h2>Como ganhar pontos</h2>
+    <ul class="list">
+      <li><span>Cada glicemia medida</span><b>5</b></li>
+      <li><span>Dose de insulina registrada (até 2)</span><b>10</b></li>
+      <li><span>Refeição anotada (até 6)</span><b>3</b></li>
+      <li><span>Meta de água batida</span><b>10</b></li>
+      <li><span>20 min ou mais de atividade</span><b>10</b></li>
+      <li><span>Todas as vitaminas</span><b>5</b></li>
+      <li><span>Peso registrado</span><b>5</b></li>
+      <li><span>Dia completo: jejum + 2 medições pós</span><b>10</b></li>
+    </ul>
+    <p class="muted">Os pontos premiam o cuidado, não o número da glicemia. Um valor alto num dia bem cuidado vale os mesmos pontos.</p>
+  </section>
+  ${(S.config.resgates||[]).length?`<section class="card"><h2>Resgatados</h2><ul class="list">${S.config.resgates.slice().reverse().map(r=>`<li><span>${esc(r.nome)}</span><span class="muted">${br(r.data)}</span></li>`).join('')}</ul></section>`:''}`;
+}
+
+function vEu(){
+  const pesos=Object.keys(S.dias).filter(d=>S.dias[d].peso).sort().map(d=>[d,S.dias[d].peso]);
+  const ult=pesos.length?pesos[pesos.length-1][1]:null;const c=S.config;const sa=semanaAtual();
+  return `
+  <section class="card"><h2>Peso</h2>
+    <label class="f" for="pesoPre">Peso antes da gravidez (kg)</label><input id="pesoPre" type="number" step="0.1" inputmode="decimal" value="${c.pesoPre??''}">
+    ${ult&&c.pesoPre?`<p><b>${(ult-c.pesoPre).toFixed(1)} kg</b> de ganho até agora. O ganho ideal é o que o obstetra indicar para ela.</p>`:''}
+    <ul class="list">${pesos.slice().reverse().slice(0,12).map(p=>`<li><span>${br(p[0])}</span><b>${p[1]} kg</b></li>`).join('')||'<li class="muted">Registre o peso na aba Hoje.</li>'}</ul>
+  </section>
+  <section class="card"><h2>Ajustes</h2>
+    <label class="f" for="cSem">Semana de gestação hoje</label><input id="cSem" type="number" min="1" max="42" value="${sa.s}">
+    <label class="f" for="cAgua" style="margin-top:10px">Meta de água (copos de 250 ml)</label><input id="cAgua" type="number" min="4" max="16" value="${c.metaAgua}">
+    <label class="f" for="cIns" style="margin-top:10px">Insulina padrão</label><input id="cIns" value="${esc(c.insulinaPadrao)}">
+    <label class="f" for="cVit" style="margin-top:10px">Vitaminas (separe por vírgula)</label><input id="cVit" value="${esc(c.vitaminas.join(', '))}">
+    <button style="margin-top:12px;width:100%" data-act="saveCfg">Salvar ajustes</button>
+  </section>
+  <p class="muted" style="text-align:center">${S.db?'Sincronizado na nuvem.':'Salvo neste aparelho.'}</p>`;
+}
+
+const TABS=[['hoje','Hoje','🌱'],['glic','Glicemia','🩸'],['coach','Coach','💬'],['premios','Prêmios','🌸'],['eu','Eu','👤']];
+function render(){
+  const v=document.getElementById('view');
+  const ae=document.activeElement;
+  if(ae&&v.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&ae.type!=='checkbox'&&ae.type!=='file'){S.pendingRender=true;renderHeader();return}
+  S.pendingRender=false;
+  v.innerHTML={hoje:vHoje,glic:vGlic,coach:vCoach,premios:vPremios,eu:vEu}[S.tab]();
+  renderHeader();
+  document.getElementById('tabs').innerHTML=TABS.map(([k,n,i])=>`<button data-tab="${k}" aria-current="${S.tab===k}"><span aria-hidden="true">${i}</span>${n}</button>`).join('');
+  const ch=document.getElementById('chat');if(ch)ch.scrollIntoView({block:'end'});
+}
+function renderHeader(){
+  const t=totais(),sa=semanaAtual();
+  document.getElementById('weekLbl').textContent=`Semana ${sa.s}${sa.d?' + '+sa.d+'d':''}`;
+  document.getElementById('plantSmall').innerHTML=planta(t.nivel,70);
+  document.getElementById('chips').innerHTML=`<span class="chip">🌸 ${t.saldo} pontos</span><span class="chip">🔥 ${t.seq} dias seguidos</span>${cuidado().murcha?'<span class="chip">🥀 com sede</span>':''}`;
+}
+document.addEventListener('focusout',()=>setTimeout(()=>{if(S.pendingRender)render()},50));
+
+/* ---------- eventos ---------- */
+document.addEventListener('change',e=>{
+  const el=e.target;if(el.id==='fotoIn'||el.id==='galIn'){const f=el.files&&el.files[0];el.value='';if(f)analisarFoto(f);return}const o=dia(S.sel);
+  if(el.dataset.g){const v=el.value===''?null:Math.round(+el.value);if(v==null)delete o.glic[el.dataset.g];else o.glic[el.dataset.g]=v;S.pendingRender=false;saveDia(o)}
+  else if(el.dataset.vit!==undefined){o.vitaminas[el.dataset.vit]=el.checked;saveDia(o)}
+  else if(el.id==='peso'){o.peso=el.value?+(+el.value).toFixed(1):null;saveDia(o)}
+  else if(el.id==='pesoPre'){S.config.pesoPre=el.value?+el.value:null;saveConfig()}
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.tab){S.tab=b.dataset.tab;render();window.scrollTo(0,0);return}
+  if(b.dataset.q){ask(b.dataset.q);return}
+  const a=b.dataset.act;if(!a)return;const o=dia(S.sel);const val=id=>document.getElementById(id).value.trim();
+  if(a==='dia'){const n=addDays(S.sel,+b.dataset.n);if(n<=hoje()){S.sel=n;render()}}
+  if(a==='addIns'){const un=val('insU');if(!un)return toast('Informe as unidades.');const h=val('insH')||new Date().toTimeString().slice(0,5);o.insulina.push({tipo:val('insT')||'Insulina',un,hora:h});saveDia(o);toast('Dose registrada.')}
+  if(a==='foto'){document.getElementById('fotoIn').click()}
+  if(a==='galeria'){document.getElementById('galIn').click()}
+  if(a==='addRef'){const d=val('refD');if(!d)return toast('Escreva o que ela comeu.');o.refeicoes.push({tipo:val('refT'),desc:d});saveDia(o)}
+  if(a==='addAt'){const t=val('atT'),m=val('atM');if(!t||!m)return toast('Preencha atividade e minutos.');o.atividade.push({tipo:t,min:+m});saveDia(o)}
+  if(a==='del'){o[b.dataset.k].splice(+b.dataset.i,1);saveDia(o)}
+  if(a==='agua'){const n=+b.dataset.n;o.agua=(o.agua===n)?n-1:n;saveDia(o)}
+  if(a==='addP'){const n=val('pN'),c=+val('pC');if(!n||!c)return toast('Preencha o prêmio e os pontos.');S.config.premios.push({id:'p'+Date.now(),nome:n,custo:c});saveConfig()}
+  if(a==='delP'){if(!confirm('Remover este prêmio?'))return;S.config.premios=S.config.premios.filter(p=>p.id!==b.dataset.id);saveConfig()}
+  if(a==='resg'){const p=S.config.premios.find(p=>p.id===b.dataset.id);if(!p||!confirm(`Resgatar "${p.nome}" por ${p.custo} pontos?`))return;S.config.resgates=[...(S.config.resgates||[]),{nome:p.nome,custo:p.custo,data:hoje()}];saveConfig();toast('Resgatado! Hora de cobrar o Gustavo 🌸')}
+  if(a==='saveCfg'){const c=S.config;const s=+val('cSem');if(s>0)c.gestRef={data:hoje(),semanas:s};c.metaAgua=Math.max(4,+val('cAgua')||10);c.insulinaPadrao=val('cIns')||'NPH';c.vitaminas=val('cVit').split(',').map(x=>x.trim()).filter(Boolean);saveConfig();toast('Ajustes salvos.')}
+  if(a==='ask'){const q=val('cq');if(q)ask(q)}
+});
+
+/* ---------- coach ---------- */
+function resumo(){
+  const sa=semanaAtual();let t=`Semana de gestação: ${sa.s}. Metas: jejum <95, 2h pós-refeição <120 mg/dL. Insulina prescrita pelo endocrinologista (${S.config.insulinaPadrao}).\nÚltimos 7 dias:\n`;
+  for(let i=6;i>=0;i--){const d=addDays(hoje(),-i),o=S.dias[d];if(!o)continue;const g=o.glic||{};
+    t+=`${br(d)}: jejum ${g.jejum??'-'}, pós-café ${g.cafe??'-'}, pós-almoço ${g.almoco??'-'}, pós-jantar ${g.jantar??'-'}; insulina ${(o.insulina||[]).map(x=>x.hora+' '+x.un+'UI').join(', ')||'-'}; refeições: ${(o.refeicoes||[]).map(r=>r.tipo+': '+r.desc+(r.carbo!=null?' (~'+r.carbo+' g carbo)':'')).join(' | ')||'-'}; água ${o.agua||0} copos; atividade ${(o.atividade||[]).reduce((a,b)=>a+(+b.min||0),0)} min\n`}
+  return t;
+}
+const REGRAS=`Você é uma coach calorosa de alimentação e hábitos para uma gestante brasileira com diabetes gestacional, acompanhada por endocrinologista que prescreveu insulina. Regras obrigatórias:
+1. Nunca sugira parar, pular, reduzir ou ajustar insulina ou remédio, e nunca diga que a dieta pode substituir a insulina. Dose é decisão exclusiva do médico.
+2. Se houver glicemia abaixo de 70 ou sintomas de hipoglicemia, oriente seguir o plano do médico e procurar atendimento se não melhorar. Valores acima de 180 ou sinais de alerta na gravidez: oriente falar com o médico.
+3. Nada de dieta de emagrecimento, jejum prolongado ou corte drástico de carboidrato. Priorize carboidratos distribuídos em 5 a 6 refeições, fibras, proteína em todas as refeições, ceia com proteína, e caminhada leve após refeições se liberada pelo obstetra.
+4. Use alimentos brasileiros comuns e medidas caseiras. Respostas curtas (até 150 palavras) e práticas, sem markdown pesado.
+5. Nunca comente peso ou corpo de forma negativa. Você não substitui nutricionista nem médico; incentive levar dúvidas às consultas.`;
+const COACH_URL='https://coach-jardim.gtv-rowe.workers.dev';
+async function ask(q){
+  if(S.busy)return;
+  if(!/^https:/.test(COACH_URL)){toast('Coach ainda não configurado.');return}
+  S.busy=true;S.chat.push({role:'user',content:q});const resp={role:'assistant',content:''};S.chat.push(resp);
+  const cq=document.getElementById('cq');if(cq)cq.value='';
+  document.activeElement&&document.activeElement.blur();render();
+  try{
+    const r=await fetch(COACH_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:S.chat.slice(0,-1),contexto:resumo()})});
+    const d=await r.json();
+    resp.content=r.ok?d.texto:('Não consegui responder agora ('+(d.erro||r.status)+').');
+  }catch(e){resp.content='Sem conexão com o coach. Verifique a internet e tente de novo.'}
+  S.busy=false;render();
+}
+
+async function reduzir(file){
+  const url=URL.createObjectURL(file);
+  const img=await new Promise((ok,err)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=err;i.src=url});
+  const max=900,k=Math.min(1,max/Math.max(img.width,img.height));
+  const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+  return c.toDataURL('image/jpeg',0.75).split(',')[1];
+}
+async function analisarFoto(file){
+  if(!/^https:/.test(COACH_URL))return toast('Coach ainda não configurado.');
+  const dataSel=S.sel;const tipoEl=document.getElementById('refT');const tipo=tipoEl?tipoEl.value:'Refeição';
+  S.fotoBusy=true;render();
+  try{
+    const foto=await reduzir(file);
+    const r=await fetch(COACH_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({foto,refeicao:tipo})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.erro||r.status);
+    const a=d.analise||{};
+    if(a.erro)toast('Não reconheci comida nessa foto. Tente de novo mais de perto.');
+    else{
+      const o=dia(dataSel);
+      const desc=(a.itens||[]).map(x=>x.nome+(x.porcao?' ('+x.porcao+')':'')).join(', ')||'Prato fotografado';
+      o.refeicoes.push({tipo,desc,carbo:Math.round(+a.carbo_total_g||0),kcal:Math.round(+a.kcal_total||0),dica:a.dica||''});
+      S.fotoBusy=false;saveDia(o);toast('Refeição adicionada pela foto.');return;
+    }
+  }catch(e){toast('Não consegui analisar agora ('+e.message+').')}
+  S.fotoBusy=false;render();
+}
+
+/* ---------- nuvem ---------- */
+if(!S.config.inicio){S.config.inicio=hoje();cache()}
+render();
+(async()=>{
+  if(!(window.claude&&claude.use))return;
+  const db=await claude.use('db');if(!db)return;
+  S.db=db;let first=true;
+  db.collection('dias').onSnapshot(snap=>{
+    const m={};snap.docs.forEach(d=>{if(d.exists)m[d.id]=clone(d.data())});
+    if(first){first=false;Object.keys(S.dias).forEach(k=>{if(!m[k]){m[k]=S.dias[k];db.collection('dias').doc(k).set(S.dias[k]).catch(()=>{})}})}
+    S.dias=m;cache();render();
+  },()=>toast('Sem conexão com a nuvem. Usando dados do aparelho.'));
+  db.doc('config/geral').onSnapshot(d=>{if(d.exists){S.config={...defaultConfig(),...clone(d.data())};cache();render()}else{db.doc('config/geral').set(S.config).catch(()=>{})}});
+})();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}</script>
+</body>
+</html>
